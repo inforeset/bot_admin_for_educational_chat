@@ -24,4 +24,4 @@ async def new_member_info(message: Message) -> None:
 
 
 def register_new_member_info(dp: Dispatcher):
-    dp.register_chat_member_handler(new_member_info, ContentTypes.NEW_CHAT_MEMBERS)
+    dp.register_message_handler(new_member_info, content_types=ContentTypes.NEW_CHAT_MEMBERS)
