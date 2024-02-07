@@ -13,6 +13,30 @@ from tgbot.keyboards.Inline.captcha_keys import gen_captcha_button_builder
 from tgbot.utils.log_config import logger
 from tgbot.utils.decorators import logging_message
 from tgbot.config import Config
+import operator
+
+
+operators: dict = {
+    '+': operator.add,
+    '-': operator.sub,
+    '*': operator.mul,
+    '/': operator.truediv,
+    '%': operator.mod,
+    '^': operator.xor,
+}
+
+
+def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
+    return operators[math_operation](int(variable_x), int(variable_y))
+
+
+def gen_math_expression() -> dict:
+    x: int = random.randint(1, 9)
+    y: int = random.randint(1, 9)
+    random_operator: str = random.choice(list(operators.keys()))
+    eval_string: str = "{} {} {}"
+    return {"expression": eval_string.format(x, random_operator, y) + "=?",
+            "answer": int(eval_binary_expr(x, y, random_operator))}
 
 
 def gen_captcha(temp_integer: int) -> BytesIO:
@@ -56,9 +80,9 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
         await msg.delete()
         logger.info(f"admin:{user_id} name:{message.from_user.full_name} was play")
     else:
-        capcha_key: int = random.randint(1000, 9999)
-        config.redis_worker.add_capcha_key(user_id, capcha_key)
-        captcha_image: InputFile = InputFile(gen_captcha(capcha_key))
+        capcha_key: dict = gen_math_expression()
+        config.redis_worker.add_capcha_key(user_id, capcha_key.get("answer"))
+        captcha_image: InputFile = InputFile(gen_captcha(capcha_key.get("expression")))
         await message.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id,
                                                permissions=ChatPermissions(can_send_messages=False),
                                                until_date=timedelta(seconds=time_rise_asyncio_ban))
@@ -67,7 +91,7 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
         msg: Message = await message.bot.send_photo(chat_id=chat_id,
                                                     photo=captcha_image,
                                                     caption=caption,
-                                                    reply_markup=gen_captcha_button_builder(capcha_key)
+                                                    reply_markup=gen_captcha_button_builder(capcha_key.get("answer"))
                                                     )
         logger.info(f"User {user_id} throw captcha")
         # FIXME change to schedule (use crone, scheduler, nats..)
