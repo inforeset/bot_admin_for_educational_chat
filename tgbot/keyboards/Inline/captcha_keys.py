@@ -9,9 +9,9 @@ def wrong_button(temp_str: str):
         param temp_str: str answer of the captcha
         return: "InlineKeyboardButton" with wrong answer
         """
-    key: int = random.randint(1000, (int(temp_str) - 1))
+    key: int = random.randint(0, (abs(int(temp_str)) + 1))
     w_b: InlineKeyboardButton = InlineKeyboardButton(
-        text=f'{key}', callback_data=f"answer_button:{random.randint(1000, (int(temp_str) - 1))}")
+        text=f'{key}', callback_data=f"answer_button:{key}")
     return w_b
 
 
