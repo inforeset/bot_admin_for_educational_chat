@@ -35,7 +35,7 @@ def gen_math_expression() -> dict:
     y: int = random.randint(1, 9)
     random_operator: str = random.choice(list(operators.keys()))
     eval_string: str = "{} {} {}"
-    return {"expression": eval_string.format(x, random_operator, y) + "=?",
+    return {"expression": eval_string.format(x, random_operator, y) + " = ?",
             "answer": int(eval_binary_expr(x, y, random_operator))}
 
 
