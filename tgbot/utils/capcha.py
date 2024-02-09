@@ -15,6 +15,7 @@ from tgbot.utils.decorators import logging_message
 from tgbot.config import Config
 import operator
 
+# TODO replace method kik(deprecated) on ban.
 
 operators: dict = {
     '+': operator.add,
