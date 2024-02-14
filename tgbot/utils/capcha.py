@@ -35,19 +35,19 @@ def gen_math_expression() -> dict:
     x: int = random.randint(1, 9)
     y: int = random.randint(1, 9)
     random_operator: str = random.choice(list(operators.keys()))
-    eval_string: str = "{} {} {}"
+    eval_string: str = " {} {} {}"
     return {"expression": eval_string.format(x, random_operator, y) + " = ?",
             "answer": int(eval_binary_expr(x, y, random_operator))}
 
 
-def gen_captcha(temp_integer: int) -> BytesIO:
+def gen_captcha(temp_capcha: str) -> BytesIO:
     """
      Take some int, generate object ImageCaptcha -> BytesIO return object BytesIO
     param temp_integer: int
     return: BytesIO
     """
     image: ImageCaptcha = ImageCaptcha()
-    data: BytesIO = image.generate(str(temp_integer))
+    data: BytesIO = image.generate(temp_capcha)
     return data
 
 
@@ -110,6 +110,7 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
             else:
                 await message.bot.kick_chat_member(chat_id=chat_id, user_id=user_id,
                                                    until_date=timedelta(seconds=minute_delta))
+                await message.bot.unban_chat_member(chat_id=chat_id, user_id=user_id)
                 logger.info(f"User {user_id} was kicked = {minute_delta}")
                 config.redis_worker.del_capcha_flag(user_id)
                 config.redis_worker.del_capcha_key(user_id)
