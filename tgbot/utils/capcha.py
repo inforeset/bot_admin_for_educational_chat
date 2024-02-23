@@ -15,7 +15,7 @@ from tgbot.utils.decorators import logging_message
 from tgbot.config import Config
 import operator
 
-# TODO replace method kik(deprecated) on ban.
+# TODO replace method kik(deprecated) on ban, splas capha files
 
 operators: dict = {
     '+': operator.add,
