@@ -6,15 +6,14 @@ import asyncio
 from datetime import timedelta
 
 from aiogram.utils.exceptions import MessageToDeleteNotFound
-from aiogram.types import Message, InputFile, ChatPermissions, ChatMemberUpdated, ReplyKeyboardRemove, ChatMember
-from typing import List
+from aiogram.types import Message, InputFile, ChatPermissions, ChatMemberUpdated
 
 from tgbot.keyboards.Inline.captcha_keys import gen_captcha_button_builder
 from tgbot.utils.log_config import logger
 from tgbot.utils.decorators import logging_message
 from tgbot.config import Config
 import operator
-
+from tgbot.utils.worker_user import UserIdentificationInChat
 # TODO replace method kik(deprecated) on ban, splas capha files
 
 operators: dict = {
@@ -58,45 +57,29 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
            param message: Message
            return None
     """
-    admins: List[ChatMember] = await message.bot.get_chat_administrators(message.chat.id)
-    admin_ids: List[int] = [admin.user.id for admin in admins if not admin.user.is_bot]
-    user_id: int = int(message.from_user.id)
-    user_name: str = message.from_user.full_name
-    chat_id: int = int(message.chat.id)
-    time_rise_asyncio_ban: int = config.time_delta.time_rise_asyncio_ban
-    minute_delta: int = config.time_delta.minute_delta
-    try:
-        new_user_id: int = int(message.new_chat_member.user.id)
-        user_id = new_user_id
-        user_name = message.new_chat_member.user.full_name
-    except IndexError as err:
-        logger.info(f"User {user_id} {user_name} not new {err}")
-    if user_id in admin_ids:
-        msg = await message.bot.send_message(chat_id=chat_id, disable_web_page_preview=True,
-                                             text="Админ не балуйся иди работать!", reply_markup=ReplyKeyboardRemove())
-        logger.info("New User {user} was greeting".format(
-            user=message.new_chat_member.user.id)
-        )
-        await asyncio.sleep(minute_delta)
-        await msg.delete()
-        logger.info(f"admin:{user_id} name:{message.from_user.full_name} was play")
-    else:
+
+    uiic: UserIdentificationInChat = UserIdentificationInChat(obj=message, config=config)
+    if uiic.is_new_user():
+        user_id: int = uiic.id_user()
+        chat_id: int = int(message.chat.id)
         capcha_key: dict = gen_math_expression()
         config.redis_worker.add_capcha_key(user_id, capcha_key.get("answer"))
         captcha_image: InputFile = InputFile(gen_captcha(capcha_key.get("expression")))
         await message.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id,
                                                permissions=ChatPermissions(can_send_messages=False),
-                                               until_date=timedelta(seconds=time_rise_asyncio_ban))
+                                               until_date=timedelta(seconds=config.time_delta.time_rise_asyncio_ban))
         logger.info(f"User {user_id} mute before answer")
-        caption: str = f'Привет, {user_name} пожалуйста ответьте иначе Вас кикнут!'
+        caption: str = f'Привет, {uiic.user_name()} пожалуйста ответьте иначе Вас кикнут!'
         msg: Message = await message.bot.send_photo(chat_id=chat_id,
                                                     photo=captcha_image,
                                                     caption=caption,
-                                                    reply_markup=gen_captcha_button_builder(capcha_key.get("answer"))
+                                                    reply_markup=gen_captcha_button_builder(
+                                                        capcha_key.get("answer"))
                                                     )
         logger.info(f"User {user_id} throw captcha")
+
         # FIXME change to schedule (use crone, scheduler, nats..)
-        await asyncio.sleep(time_rise_asyncio_ban)
+        await asyncio.sleep(config.time_delta.time_rise_asyncio_ban)
         try:
             await msg.delete()
             logger.info(f"for User {user_id} del msg captcha")
@@ -109,14 +92,17 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
                 logger.info(f"for User {user_id} pass\n del capcha key, flag")
             else:
                 await message.bot.kick_chat_member(chat_id=chat_id, user_id=user_id,
-                                                   until_date=timedelta(seconds=minute_delta))
+                                                   until_date=timedelta(seconds=config.time_delta.minute_delta))
                 await message.bot.unban_chat_member(chat_id=chat_id, user_id=user_id)
-                logger.info(f"User {user_id} was kicked = {minute_delta}")
+                logger.info(f"User {user_id} was kicked = {config.time_delta.minute_delta}")
                 config.redis_worker.del_capcha_flag(user_id)
                 config.redis_worker.del_capcha_key(user_id)
                 logger.info(f"for User {user_id} no pass\n del capcha key, flag")
         except TypeError as err:
             logger.info(f"for User {user_id} not have captcha flag")
+
+    else:
+        pass
 
 
 if __name__ == '__main__':
