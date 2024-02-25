@@ -59,47 +59,46 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
     """
 
     uiic: UserIdentificationInChat = UserIdentificationInChat(obj=message, config=config)
-    if uiic.is_new_user():
-        user_id: int = uiic.id_user()
-        chat_id: int = int(message.chat.id)
+    if uiic.is_new_user() and not uiic.redis_flag():
         capcha_key: dict = gen_math_expression()
-        config.redis_worker.add_capcha_key(user_id, capcha_key.get("answer"))
+        config.redis_worker.add_capcha_flag(uiic.id_user(), 0)
+        config.redis_worker.add_capcha_key(uiic.id_user(), capcha_key.get("answer"))
         captcha_image: InputFile = InputFile(gen_captcha(capcha_key.get("expression")))
-        await message.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id,
+        await message.bot.restrict_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
                                                permissions=ChatPermissions(can_send_messages=False),
                                                until_date=timedelta(seconds=config.time_delta.time_rise_asyncio_ban))
-        logger.info(f"User {user_id} mute before answer")
+        logger.info(f"User {uiic.id_user()} mute before answer")
         caption: str = f'Привет, {uiic.user_name()} пожалуйста ответьте иначе Вас кикнут!'
-        msg: Message = await message.bot.send_photo(chat_id=chat_id,
+        msg: Message = await message.bot.send_photo(chat_id=uiic.chat_id(),
                                                     photo=captcha_image,
                                                     caption=caption,
                                                     reply_markup=gen_captcha_button_builder(
                                                         capcha_key.get("answer"))
                                                     )
-        logger.info(f"User {user_id} throw captcha")
+        logger.info(f"User {uiic.id_user()} throw captcha")
 
         # FIXME change to schedule (use crone, scheduler, nats..)
         await asyncio.sleep(config.time_delta.time_rise_asyncio_ban)
         try:
             await msg.delete()
-            logger.info(f"for User {user_id} del msg captcha")
+            logger.info(f"for User {uiic.id_user()} del msg captcha")
         except MessageToDeleteNotFound as error:
-            logger.info(f"{error} msg {user_id}")
+            logger.info(f"{error} msg {uiic.id_user()}")
         try:
-            if config.redis_worker.get_capcha_flag(user_id) == 1:
-                config.redis_worker.del_capcha_flag(user_id)
-                config.redis_worker.del_capcha_key(user_id)
-                logger.info(f"for User {user_id} pass\n del capcha key, flag")
+            if config.redis_worker.get_capcha_flag(uiic.id_user()) == 1:
+                config.redis_worker.del_capcha_flag(uiic.id_user())
+                config.redis_worker.del_capcha_key(uiic.id_user())
+                logger.info(f"for User {uiic.id_user()} pass\n del capcha key, flag")
             else:
-                await message.bot.kick_chat_member(chat_id=chat_id, user_id=user_id,
+                await message.bot.kick_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
                                                    until_date=timedelta(seconds=config.time_delta.minute_delta))
-                await message.bot.unban_chat_member(chat_id=chat_id, user_id=user_id)
-                logger.info(f"User {user_id} was kicked = {config.time_delta.minute_delta}")
-                config.redis_worker.del_capcha_flag(user_id)
-                config.redis_worker.del_capcha_key(user_id)
-                logger.info(f"for User {user_id} no pass\n del capcha key, flag")
+                await message.bot.unban_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user())
+                logger.info(f"User {uiic.id_user()} was kicked ")
+                config.redis_worker.del_capcha_flag(uiic.id_user())
+                config.redis_worker.del_capcha_key(uiic.id_user())
+                logger.info(f"for User {uiic.id_user()} no pass\n del capcha key, flag")
         except TypeError as err:
-            logger.info(f"for User {user_id} not have captcha flag")
+            logger.info(f"for User {uiic.id_user()} not have captcha flag")
 
     else:
         pass
