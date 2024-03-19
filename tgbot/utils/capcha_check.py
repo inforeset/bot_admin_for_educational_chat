@@ -1,6 +1,6 @@
 import asyncio
 
-from aiogram.types import ChatPermissions, CallbackQuery, Message, ReplyKeyboardRemove, User
+from aiogram.types import ChatPermissions, CallbackQuery, Message, ReplyKeyboardRemove
 from datetime import timedelta
 
 from tgbot.utils.texts import greeting_text
