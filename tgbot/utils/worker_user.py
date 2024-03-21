@@ -19,10 +19,7 @@ class UserIdentificationInChat:
         """
         determines the type of object being use
         """
-        if isinstance(self.obj, CallbackQuery):
-            return True
-        else:
-            return False
+        return isinstance(self.obj, CallbackQuery)
 
     def chat_id(self) -> int:
         if self.is_callback():
@@ -31,32 +28,26 @@ class UserIdentificationInChat:
             return int(self.obj.chat.id)
 
     def id_user(self) -> int:
+        user_id: int
         if self.is_new_user():
             if self.is_callback():
                 user_id: int = int(self.obj.message.new_chat_member.id)
             else:
                 user_id: int = int(self.obj.new_chat_member.user.id)
-            return int(user_id)
         else:
-            if self.is_callback():
-                user_id: int = int(self.obj.from_user.id)
-            else:
-                user_id: int = int(self.obj.from_user.id)
-            return int(user_id)
+            user_id: int = int(self.obj.from_user.id)
+        return user_id
 
     def user_name(self) -> str:
+        user_name: str
         if self.is_new_user():
-            if self.is_callback():
-                user_name: str = self.obj.new_chat_member.user.full_name
-            else:
-                user_name: str = self.obj.new_chat_member.user.full_name
-            return user_name
+            user_name: str = self.obj.new_chat_member.user.full_name
         else:
             if self.is_callback():
                 user_name: str = self.obj.message.from_user.full_name
             else:
                 user_name: str = self.obj.from_user.full_name
-            return user_name
+        return user_name
 
     def is_new_user(self) -> bool:
         """in trow capcha check if user is new """
