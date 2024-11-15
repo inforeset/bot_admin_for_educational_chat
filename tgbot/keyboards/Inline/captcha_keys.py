@@ -5,14 +5,21 @@ from typing import List
 
 def wrong_button(temp_str: str):
     """
-         Take answer, generate object button, return object: "InlineKeyboardButton"
-        param temp_str: str answer of the captcha
-        return: "InlineKeyboardButton" with wrong answer
-        """
-    key: int = random.randint(0, (abs(int(temp_str)) + 1))
-    w_b: InlineKeyboardButton = InlineKeyboardButton(
-        text=f'{key}', callback_data=f"answer_button:{key}")
+    Generate a wrong answer button that is not equal to the correct answer.
+    :param temp_str: str, correct answer of the captcha
+    :return: InlineKeyboardButton with a wrong answer
+    """
+    correct_answer = int(temp_str)
+    while True:
+        key = random.randint(0, (abs(correct_answer) + 1))
+        if key != correct_answer:
+            break
+
+    w_b = InlineKeyboardButton(
+        text=f'{key}', callback_data=f"answer_button:{key}"
+    )
     return w_b
+
 
 
 def gen_captcha_keys(temp: int) -> List[InlineKeyboardButton]:
