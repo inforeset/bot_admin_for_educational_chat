@@ -19,13 +19,10 @@ operators: dict = {
     '+': operator.add,
     '-': operator.sub,
     '*': operator.mul,
-    #они сложные, такое трудно посчитать
-    # '/': operator.truediv,
-    # '%': operator.mod,
-    # '^': operator.xor,
 }
 
 words_list = ['S', 'K', 'I', 'L', 'B', 'O', 'X', 'С', 'К', 'И', 'Л', 'Б', 'О']
+
 
 def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
     return operators[math_operation](int(variable_x), int(variable_y))
@@ -35,8 +32,6 @@ def gen_math_expression() -> dict:
     x: int = random.randint(1, 9)
     y: int = random.randint(1, 9)
     random_operator: str = random.choice(list(operators.keys()))
-
-    #Для создания шума
     word_one: str = random.choice(words_list)
     word_two: str = random.choice(words_list)
     random_operator_two: str = random.choice(list(operators.keys()))
