@@ -22,36 +22,42 @@ async def thank_message(message: types.Message, session: AsyncSession) -> None:
     :param session: объект асинхронной сессии алхимии
     """
 
-    query = await session.execute(
-        select(
-            Reputation
-        ).where(
-            Reputation.user_id == message.reply_to_message.from_user.id
-        )
-    )
-
-    reputation = query.scalars().first()
-
-    if not reputation:
-        reputation = Reputation()
-        reputation.user_id = message.reply_to_message.from_user.id
-        reputation.scores = 1
-        reputation.link = message.reply_to_message.from_user.get_mention(as_html=True)
+    if message.from_user.id == message.reply_to_message.from_user.id:
+        msg_to_delete_in_10sec = await message.reply_to_message.reply("Вы не можете повышать репутацию себе! Попросите кого-нибудь другого :)")
+        await asyncio.sleep(10)
+        with suppress(TelegramAPIError):
+            await msg_to_delete_in_10sec.delete()
     else:
-        reputation.scores = Reputation.scores + 1
+        query = await session.execute(
+            select(
+                Reputation
+            ).where(
+                Reputation.user_id == message.reply_to_message.from_user.id
+            )
+        )
 
-    session.add(reputation)
-    await session.commit()
-    await session.refresh(reputation)
+        reputation = query.scalars().first()
 
-    msg_to_delete_in_30sec = await message.reply_to_message.reply(
-        f"{message.reply_to_message.from_user.get_mention(as_html=True)}, {message.from_user.get_mention(as_html=True)}"
-        f" повысил(а) вашу репутацию.\nВаша репутация {reputation.scores}."
-    )
+        if not reputation:
+            reputation = Reputation()
+            reputation.user_id = message.reply_to_message.from_user.id
+            reputation.scores = 1
+            reputation.link = message.reply_to_message.from_user.get_mention(as_html=True)
+        else:
+            reputation.scores = Reputation.scores + 1
 
-    await asyncio.sleep(30)
-    with suppress(TelegramAPIError):
-        await msg_to_delete_in_30sec.delete()
+        session.add(reputation)
+        await session.commit()
+        await session.refresh(reputation)
+
+        msg_to_delete_in_30sec = await message.reply_to_message.reply(
+            f"{message.reply_to_message.from_user.get_mention(as_html=True)}, {message.from_user.get_mention(as_html=True)}"
+            f" повысил(а) вашу репутацию.\nВаша репутация {reputation.scores}."
+        )
+
+        await asyncio.sleep(30)
+        with suppress(TelegramAPIError):
+            await msg_to_delete_in_30sec.delete()
 
 
 def register_thank_message(dp: Dispatcher):
