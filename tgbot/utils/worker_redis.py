@@ -1,6 +1,8 @@
 import redis
 
 
+# TODO sync too async redis
+
 class WorkerRedis:
     """
         Class: work with redis context manager
@@ -81,4 +83,3 @@ class WorkerRedis:
             self.del_capcha_key(int(key))
         for key in users_capcha_flag:
             self.del_capcha_flag(int(key))
-

@@ -1,5 +1,5 @@
 from aiogram import Dispatcher
-from aiogram.types import ChatMemberUpdated, CallbackQuery
+from aiogram.types import ChatMemberUpdated
 from magic_filter import F
 
 from tgbot.utils.log_config import logger
@@ -16,21 +16,8 @@ async def new_member_info(message: ChatMemberUpdated, config: Config) -> None:
     Handler for greeting new user in group and sending to him some use ful links
 
     """
-    user_id: int = int(message.new_chat_member.user.id)
-    chat_member: bool = message.old_chat_member.is_chat_member()
-    if not chat_member:
-        if type(message) not in [CallbackQuery]:
-            config.redis_worker.add_capcha_flag(user_id, 0)
-            await throw_capcha(message=message, config=config)
-            logger.info(f"new_member_info run throw capcha {type(message)}\n"
-                        f"for user {user_id} ")
-        else:
-            logger.info(f"new_member_info run in{message.chat.id}\n"
-                        f"{type(message)} msg type for no reason\n"
-                        f"need FIX (if type(message) not in [CallbackQuery])")
-    else:
-        logger.info(f"new_member_info run in {message.chat.id}\ntype msg {type(message)}"
-                    f" for no reason\n need FIX F.new_chat_member.is_chat_member")
+    await throw_capcha(message=message, config=config)
+    logger.info(f"new_member_info run throw capcha {type(message)}\n")
 
 
 def register_new_member_info(dp: Dispatcher):
