@@ -19,11 +19,13 @@ operators: dict = {
     '+': operator.add,
     '-': operator.sub,
     '*': operator.mul,
-    '/': operator.truediv,
-    '%': operator.mod,
-    '^': operator.xor,
+    #они сложные, такое трудно посчитать
+    # '/': operator.truediv,
+    # '%': operator.mod,
+    # '^': operator.xor,
 }
 
+words_list = ['S', 'K', 'I', 'L', 'B', 'O', 'X', 'С', 'К', 'И', 'Л', 'Б', 'О']
 
 def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
     return operators[math_operation](int(variable_x), int(variable_y))
@@ -33,7 +35,16 @@ def gen_math_expression() -> dict:
     x: int = random.randint(1, 9)
     y: int = random.randint(1, 9)
     random_operator: str = random.choice(list(operators.keys()))
-    eval_string: str = " {} {} {}"
+
+    #Для создания шума
+    word_one: str = random.choice(words_list)
+    word_two: str = random.choice(words_list)
+    random_operator_two: str = random.choice(list(operators.keys()))
+    random_operator_three: str = random.choice(list(operators.keys()))
+
+    eval_string: str = "{} {} {} {} {} {} {}".format(
+        x, random_operator, y, random_operator_two, word_one, random_operator_three, word_two
+    )
     return {"expression": eval_string.format(x, random_operator, y) + " = ?",
             "answer": int(eval_binary_expr(x, y, random_operator))}
 
@@ -44,7 +55,7 @@ def gen_captcha(temp_capcha: str) -> BytesIO:
     param temp_integer: int
     return: BytesIO
     """
-    image: ImageCaptcha = ImageCaptcha()
+    image: ImageCaptcha = ImageCaptcha(width=600, height=150)
     data: BytesIO = image.generate(temp_capcha)
     return data
 
@@ -67,7 +78,9 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
                                                permissions=ChatPermissions(can_send_messages=False),
                                                until_date=timedelta(seconds=config.time_delta.time_rise_asyncio_ban))
         logger.info(f"User {uiic.id_user()} mute before answer")
-        caption: str = f'Привет, {uiic.user_name()} пожалуйста ответьте иначе Вас кикнут!'
+        caption: str = (f"Привет, {uiic.user_name()}! Для начала решите капчу. "
+                        f"\nНадо посчитать только цифры, буквы в расчет не брать! "
+                        f"\nПожалуйста ответьте, иначе Вас кикнут!")
         msg: Message = await message.bot.send_photo(chat_id=uiic.chat_id(),
                                                     photo=captcha_image,
                                                     caption=caption,
