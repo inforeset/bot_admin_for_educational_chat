@@ -19,8 +19,8 @@ operators: dict = {
     '+': operator.add,
     '-': operator.sub,
     '*': operator.mul,
-    '/': operator.truediv,
     #они сложные, такое трудно посчитать
+    # '/': operator.truediv,
     # '%': operator.mod,
     # '^': operator.xor,
 }

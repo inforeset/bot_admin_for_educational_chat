@@ -9,13 +9,15 @@ def wrong_button(temp_str: str):
     :param temp_str: str, correct answer of the captcha
     :return: InlineKeyboardButton with a wrong answer
     """
-    correct_answer = int(temp_str)
+    correct_answer: int = int(temp_str)
     while True:
+        if abs(correct_answer) <= 3:
+            correct_answer = 4
         key = random.randint(0, (abs(correct_answer) + 1))
         if key != correct_answer:
             break
 
-    w_b = InlineKeyboardButton(
+    w_b: InlineKeyboardButton = InlineKeyboardButton(
         text=f'{key}', callback_data=f"answer_button:{key}"
     )
     return w_b
