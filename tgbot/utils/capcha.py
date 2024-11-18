@@ -73,8 +73,8 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
                                                permissions=ChatPermissions(can_send_messages=False),
                                                until_date=timedelta(seconds=config.time_delta.time_rise_asyncio_ban))
         logger.info(f"User {uiic.id_user()} mute before answer")
-        caption: str = (f"Привет, {uiic.user_name()}! Для начала решите капчу. "
-                        f"\nНадо посчитать только цифры, буквы в расчет не брать! "
+        caption: str = (f"Привет, {uiic.user_name()}! Для начала решите капчу."
+                        f"\nНадо посчитать только цифры, буквы в расчет не брать!"
                         f"\nПожалуйста ответьте, иначе Вас кикнут!")
         msg: Message = await message.bot.send_photo(chat_id=uiic.chat_id(),
                                                     photo=captcha_image,
@@ -108,7 +108,7 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
             logger.info(f"for User {uiic.id_user()} not have captcha flag")
 
     else:
-        pass
+        logger.info(f"This user - {uiic.id_user()} is old user. \nHe was added in group some times ago.")
 
 
 if __name__ == '__main__':
