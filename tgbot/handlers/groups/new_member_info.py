@@ -1,10 +1,11 @@
 from aiogram import Dispatcher
-from aiogram.types import ChatMemberUpdated, CallbackQuery
+from aiogram.types import ChatMemberUpdated
 from magic_filter import F
 
+from tgbot.utils.log_config import logger
 from tgbot.utils.decorators import logging_message
 from tgbot.utils.capcha import throw_capcha
-from tgbot.config import Config, user_dict
+from tgbot.config import Config
 
 
 @logging_message
@@ -12,13 +13,11 @@ async def new_member_info(message: ChatMemberUpdated, config: Config) -> None:
     """
     Хендлер для приветствия нового пользователя группы с полезными ссылками.
 
-    Handler for greeting new user in group and sending to him some useful links
+    Handler for greeting new user in group and sending to him some use ful links
 
     """
-    user_id: int = int(message.new_chat_member.user.id)
-    if user_id not in [*user_dict.keys()]:
-        if type(message) is not CallbackQuery:
-            await throw_capcha(message=message, config=config)
+    await throw_capcha(message=message, config=config)
+    logger.info(f"new_member_info run throw capcha {type(message)}\n")
 
 
 def register_new_member_info(dp: Dispatcher):

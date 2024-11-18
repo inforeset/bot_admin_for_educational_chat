@@ -51,18 +51,17 @@ async def ro(message: Message, config: Config) -> None:
             chat=chat_label,
             duration=duration)
         await send_alert_to_admins(message=message, text=text, config=config)
-
+        logger.info("msg {msg_id_del} del by bot".format(
+            msg_id_del=msg_id_del)
+        )
+        await message.bot.delete_message(message.chat.id, msg_id_del)
         await message.reply_to_message.answer(
             "<b>Режим &#171;только чтениe&#187;</b> активирован для пользователя {user}."
             "\nПродолжительность: {duration}".format(
                 user=message.reply_to_message.from_user.get_mention(),
                 duration=format_timedelta(duration, locale='ru', granularity="second", format="short"))
         )
-        await asyncio.sleep(minute_delta)
-        logger.info("msg {msg_id_del} del by bot".format(
-            msg_id_del=msg_id_del)
-        )
-        await message.bot.delete_message(message.chat.id, msg_id_del)
+
     except BadRequest as e:
         logger.error("Failed to restrict chat member: {error!r}", exc_info=e)
 

@@ -6,37 +6,52 @@ import asyncio
 from datetime import timedelta
 
 from aiogram.utils.exceptions import MessageToDeleteNotFound
-from aiogram.types import Message, InputFile, ChatPermissions, ChatMemberUpdated, ReplyKeyboardRemove, ChatMember
-from typing import List
+from aiogram.types import Message, InputFile, ChatPermissions, ChatMemberUpdated
 
 from tgbot.keyboards.Inline.captcha_keys import gen_captcha_button_builder
 from tgbot.utils.log_config import logger
 from tgbot.utils.decorators import logging_message
-from tgbot.config import user_dict, Config, capcha_flag_user_dict
+from tgbot.config import Config
+import operator
+from tgbot.utils.worker_user import UserIdentificationInChat
+
+operators: dict = {
+    '+': operator.add,
+    '-': operator.sub,
+    '*': operator.mul,
+}
+
+words_list = ['S', 'K', 'I', 'L', 'B', 'O', 'X', 'С', 'К', 'И', 'Л', 'Б', 'О']
 
 
-async def dict_pop_executor(user_id: int) -> None:
-    """
-    Take id int, execute pop in dicts
-    param user_id: int
-    return: None
-    """
-    try:
-        capcha_flag_user_dict.pop(user_id, None)
-        user_dict.pop(user_id, None)
-        logger.info(f"pop_execute  {user_id} del")
-    except KeyError as error:
-        logger.info(f"{error} error by key {user_id}")
+def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
+    return operators[math_operation](int(variable_x), int(variable_y))
 
 
-def gen_captcha(temp_integer: int) -> BytesIO:
+def gen_math_expression() -> dict:
+    x: int = random.randint(1, 9)
+    y: int = random.randint(1, 9)
+    random_operator: str = random.choice(list(operators.keys()))
+    word_one: str = random.choice(words_list)
+    word_two: str = random.choice(words_list)
+    random_operator_two: str = random.choice(list(operators.keys()))
+    random_operator_three: str = random.choice(list(operators.keys()))
+
+    eval_string: str = "{} {} {} {} {} {} {}".format(
+        x, random_operator, y, random_operator_two, word_one, random_operator_three, word_two
+    )
+    return {"expression": eval_string.format(x, random_operator, y) + " = ?",
+            "answer": int(eval_binary_expr(x, y, random_operator))}
+
+
+def gen_captcha(temp_capcha: str) -> BytesIO:
     """
      Take some int, generate object ImageCaptcha -> BytesIO return object BytesIO
     param temp_integer: int
     return: BytesIO
     """
-    image: ImageCaptcha = ImageCaptcha()
-    data: BytesIO = image.generate(str(temp_integer))
+    image: ImageCaptcha = ImageCaptcha(width=600, height=150)
+    data: BytesIO = image.generate(temp_capcha)
     return data
 
 
@@ -47,57 +62,53 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
            param message: Message
            return None
     """
-    admins: List[ChatMember] = await message.bot.get_chat_administrators(message.chat.id)
-    admin_ids: List[int] = [admin.user.id for admin in admins if not admin.user.is_bot]
-    user_id: int = int(message.from_user.id)
-    user_name: str = message.from_user.full_name
-    chat_id: int = int(message.chat.id)
-    time_rise_asyncio_ban: int = config.time_delta.time_rise_asyncio_ban
-    minute_delta: int = config.time_delta.minute_delta
-    try:
-        new_user_id: int = int(message.new_chat_member.user.id)
-        user_id = new_user_id
-        user_name = message.new_chat_member.user.full_name
-    except IndexError as err:
-        logger.info(f"User {user_id} {user_name} not new {err}")
-    if user_id in admin_ids:
-        msg = await message.bot.send_message(chat_id=chat_id, disable_web_page_preview=True,
-                                             text="Админ не балуйся иди работать!", reply_markup=ReplyKeyboardRemove())
-        logger.info("New User {user} was greeting".format(
-            user=message.new_chat_member.user.id)
-        )
-        await asyncio.sleep(minute_delta)
-        await msg.delete()
-        logger.info(f"admin:{user_id} name:{message.from_user.full_name} was play")
-    else:
-        password: int = random.randint(1000, 9999)
-        user_dict.update({user_id: password})
-        captcha_image: InputFile = InputFile(gen_captcha(password))
-        await message.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id,
+
+    uiic: UserIdentificationInChat = UserIdentificationInChat(obj=message, config=config)
+    if uiic.is_new_user() and not uiic.redis_flag():
+        capcha_key: dict = gen_math_expression()
+        config.redis_worker.add_capcha_flag(uiic.id_user(), 0)
+        config.redis_worker.add_capcha_key(uiic.id_user(), capcha_key.get("answer"))
+        captcha_image: InputFile = InputFile(gen_captcha(capcha_key.get("expression")))
+        await message.bot.restrict_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
                                                permissions=ChatPermissions(can_send_messages=False),
-                                               until_date=timedelta(seconds=time_rise_asyncio_ban))
-        logger.info(f"User {user_id} mute before answer")
-        caption: str = f'Привет, {user_name} пожалуйста ответьте {password} иначе Вас кикнут!'
-        msg: Message = await message.bot.send_photo(chat_id=chat_id,
+                                               until_date=timedelta(seconds=config.time_delta.time_rise_asyncio_ban))
+        logger.info(f"User {uiic.id_user()} mute before answer")
+        caption: str = (f"Привет, {uiic.user_name()}! Для начала решите капчу. "
+                        f"\nНадо посчитать только цифры, буквы в расчет не брать! "
+                        f"\nПожалуйста ответьте, иначе Вас кикнут!")
+        msg: Message = await message.bot.send_photo(chat_id=uiic.chat_id(),
                                                     photo=captcha_image,
                                                     caption=caption,
-                                                    reply_markup=gen_captcha_button_builder(password)
+                                                    reply_markup=gen_captcha_button_builder(
+                                                        capcha_key.get("answer"))
                                                     )
-        logger.info(f"User {user_id} throw captcha")
+        logger.info(f"User {uiic.id_user()} throw captcha")
+
         # FIXME change to schedule (use crone, scheduler, nats..)
-        await asyncio.sleep(time_rise_asyncio_ban)
+        await asyncio.sleep(config.time_delta.time_rise_asyncio_ban)
         try:
             await msg.delete()
+            logger.info(f"for User {uiic.id_user()} del msg captcha")
         except MessageToDeleteNotFound as error:
-            logger.info(f"{error} msg {user_id}")
-        if capcha_flag_user_dict.get(user_id):
-            await dict_pop_executor(user_id)
-        else:
-            await message.bot.kick_chat_member(chat_id=chat_id, user_id=user_id,
-                                               until_date=timedelta(seconds=minute_delta))
-            logger.info(f"User {user_id} was kicked = {minute_delta}")
-            await dict_pop_executor(user_id)
-        logger.info(f"for User {user_id} del msg captcha")
+            logger.info(f"{error} msg {uiic.id_user()}")
+        try:
+            if config.redis_worker.get_capcha_flag(uiic.id_user()) == 1:
+                config.redis_worker.del_capcha_flag(uiic.id_user())
+                config.redis_worker.del_capcha_key(uiic.id_user())
+                logger.info(f"for User {uiic.id_user()} pass\n del capcha key, flag")
+            else:
+                await message.bot.kick_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
+                                                   until_date=timedelta(seconds=config.time_delta.minute_delta))
+                await message.bot.unban_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user())
+                logger.info(f"User {uiic.id_user()} was kicked ")
+                config.redis_worker.del_capcha_flag(uiic.id_user())
+                config.redis_worker.del_capcha_key(uiic.id_user())
+                logger.info(f"for User {uiic.id_user()} no pass\n del capcha key, flag")
+        except TypeError as err:
+            logger.info(f"for User {uiic.id_user()} not have captcha flag")
+
+    else:
+        pass
 
 
 if __name__ == '__main__':

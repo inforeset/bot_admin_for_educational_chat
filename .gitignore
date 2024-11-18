@@ -65,3 +65,4 @@ venv.bak/
 .env
 logs
 logs/*
+/start_test_docker.sh

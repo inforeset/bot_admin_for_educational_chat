@@ -13,6 +13,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis_for_bot:
+        condition: service_healthy
+
+
+
+  redis_for_bot:
+    image: redis:latest
+    container_name: ${REDIS_CONTAINER_NAME}
+    hostname: ${REDIS_HOST_NAME}
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
 
   db:
     container_name: ${DB_CONTAINER_NAME}

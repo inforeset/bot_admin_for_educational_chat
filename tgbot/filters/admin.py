@@ -24,4 +24,3 @@ class AdminFilter(BoundFilter):
         if isinstance(member, ChatMemberOwner) or isinstance(member, ChatMemberAdministrator):
             return True
         return False
-

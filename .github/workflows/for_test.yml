@@ -1,12 +1,12 @@
 name: tg_admin_bot
 env:
   PROJECT_NAME: "tg_admin_bot"
-  BRANCH: "master"
+  BRANCH: "redis_change_dict"
   VERSION: ${{ github.sha }}
-
+  DEPLOY_PATH_PROD: "/home/deskent/projects/test/test_bot"
 on:
   push:
-    branches: [ master ]
+    branches: [ redis_change_dict ]
 
 jobs:
   deploy:
@@ -20,7 +20,7 @@ jobs:
           username: ${{ secrets.USERNAME_PROD }}
           key: ${{ secrets.SSH_PRIVATE_KEY_PROD }}
           script: |
-            cd ${{ secrets.DEPLOY_PATH_PROD }} \
+            cd ${{ env.DEPLOY_PATH_PROD }} \
             && git checkout ${{ env.BRANCH }} \
             && git pull \
             && docker-compose up --build -d

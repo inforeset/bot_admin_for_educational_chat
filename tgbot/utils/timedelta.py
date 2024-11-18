@@ -65,4 +65,3 @@ async def parse_timedelta_from_message(message: types.Message) -> datetime.timed
 
     except TimedeltaParseError:
         await message.reply("Аргументы команды <i>!ro</i> указаны неверно")
-
