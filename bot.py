@@ -85,7 +85,7 @@ async def main():
     dp.middleware.setup(DbSessionMiddleware(db_pool))
 
     try:
-        config.redis_worker.del_all_key()
+        await config.redis_worker.del_all_key()
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(
             allowed_updates=(

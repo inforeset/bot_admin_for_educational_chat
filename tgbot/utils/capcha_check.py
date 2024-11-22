@@ -16,9 +16,11 @@ async def check_captcha(call: CallbackQuery, config: Config):
                return None
         """
     uiic: UserIdentificationInChat = UserIdentificationInChat(obj=call, config=config)
+    right_key: int = int(call.data.split(':')[1])
+    redis_right_key: int = await config.redis_worker.get_capcha_key(uiic.id_user())
 
-    if uiic.redis_check_user_id() and await uiic.is_chat_member():
-        if int(call.data.split(':')[1]) == config.redis_worker.get_capcha_key(uiic.id_user()):
+    if await uiic.redis_check_user_id() and await uiic.is_chat_member():
+        if  right_key == redis_right_key:
             await call.answer(text=f"{uiic.user_name()}"
                                    f" you are pass!", show_alert=True)
             await call.bot.restrict_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
@@ -26,7 +28,7 @@ async def check_captcha(call: CallbackQuery, config: Config):
                                                 until_date=timedelta(seconds=config.time_delta.minute_delta))
             await call.bot.delete_message(chat_id=uiic.chat_id(), message_id=call.message.message_id)
             logger.info(f"User id:{uiic.id_user()} name:{uiic.user_name()}was pass")
-            config.redis_worker.add_capcha_flag(uiic.id_user(), 1)
+            await config.redis_worker.add_capcha_flag(uiic.id_user(), 1)
             greeting: str = greeting_text(call=call, bot_user=await call.message.bot.get_me())
             msg: Message = await call.message.answer(text=greeting, disable_web_page_preview=True,
                                                      reply_markup=ReplyKeyboardRemove())
