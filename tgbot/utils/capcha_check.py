@@ -16,11 +16,9 @@ async def check_captcha(call: CallbackQuery, config: Config):
                return None
         """
     uiic: UserIdentificationInChat = UserIdentificationInChat(obj=call, config=config)
-    right_key: int = int(call.data.split(':')[1])
-    redis_right_key: int = await config.redis_worker.get_capcha_key(uiic.id_user())
 
     if await uiic.redis_check_user_id() and await uiic.is_chat_member():
-        if  right_key == redis_right_key:
+        if  int(call.data.split(':')[1]) == await config.redis_worker.get_capcha_key(uiic.id_user()):
             await call.answer(text=f"{uiic.user_name()}"
                                    f" you are pass!", show_alert=True)
             await call.bot.restrict_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
