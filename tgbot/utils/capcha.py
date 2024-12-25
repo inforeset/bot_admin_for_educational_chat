@@ -21,7 +21,7 @@ operators: dict = {
     '*': operator.mul,
 }
 
-words_list = ['S', 'K', 'I', 'L', 'B', 'O', 'X', 'С', 'К', 'И', 'Л', 'Б', 'О']
+words_list = ['S', 'K', 'I', 'L', 'B', 'X', 'С', 'К', 'И', 'Л', 'Б']
 
 
 def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
@@ -29,8 +29,8 @@ def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
 
 
 def gen_math_expression() -> dict:
-    x: int = random.randint(1, 9)
-    y: int = random.randint(1, 9)
+    x: int = random.randint(10, 30)
+    y: int = random.randint(10, x)
     random_operator: str = random.choice(list(operators.keys()))
     word_one: str = random.choice(words_list)
     word_two: str = random.choice(words_list)
