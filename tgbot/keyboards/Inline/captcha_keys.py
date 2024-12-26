@@ -16,9 +16,7 @@ def wrong_button(temp_str: str, existing_values: set=None):
     if existing_values is None:
         existing_values = set()
     while True:
-        if abs(correct_answer) <= 3:
-            correct_answer = 4
-        key = random.randint(0, abs(correct_answer) + 1)
+        key = random.randint(0, abs(correct_answer) + 10)
         if key != correct_answer and key not in existing_values:
             break
     existing_values.add(key)
