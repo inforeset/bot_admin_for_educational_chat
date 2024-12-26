@@ -15,7 +15,6 @@ def wrong_button(temp_str: str, existing_values: set=None):
     correct_answer: int = int(temp_str)
     if existing_values is None:
         existing_values = set()
-
     while True:
         if abs(correct_answer) <= 3:
             correct_answer = 4
