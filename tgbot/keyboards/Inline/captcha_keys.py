@@ -3,7 +3,7 @@ import random
 from typing import List
 
 
-def wrong_button(temp_str: str, existing_values: set):
+def wrong_button(temp_str: str, existing_values: set=None):
     """
     Generate a wrong answer button that is not equal to the correct answer
     and is unique (not in the provided existing values).
@@ -13,6 +13,9 @@ def wrong_button(temp_str: str, existing_values: set):
     :return: InlineKeyboardButton with a unique wrong answer
     """
     correct_answer: int = int(temp_str)
+    if existing_values is None:
+        existing_values = set()
+
     while True:
         if abs(correct_answer) <= 3:
             correct_answer = 4
