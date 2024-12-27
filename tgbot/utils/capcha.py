@@ -29,7 +29,7 @@ def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
 
 
 def gen_math_expression() -> dict:
-    x: int = random.randint(10, 30)
+    x: int = random.randint(1, 10)
     y: int = random.randint(10, x)
     random_operator: str = random.choice(list(operators.keys()))
     word_one: str = random.choice(words_list)
