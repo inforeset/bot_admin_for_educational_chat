@@ -21,7 +21,7 @@ operators: dict = {
     '*': operator.mul,
 }
 
-words_list = ['S', 'K', 'I', 'L', 'B', 'O', 'X', 'С', 'К', 'И', 'Л', 'Б', 'О']
+words_list = ['S', 'K', 'I', 'L', 'B', 'X', 'С', 'К', 'И', 'Л', 'Б']
 
 
 def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
@@ -29,8 +29,8 @@ def eval_binary_expr(variable_x, variable_y, math_operation) -> int:
 
 
 def gen_math_expression() -> dict:
-    x: int = random.randint(1, 9)
-    y: int = random.randint(1, 9)
+    x: int = random.randint(1, 10)
+    y: int = random.randint(10, x)
     random_operator: str = random.choice(list(operators.keys()))
     word_one: str = random.choice(words_list)
     word_two: str = random.choice(words_list)
@@ -64,10 +64,10 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
     """
 
     uiic: UserIdentificationInChat = UserIdentificationInChat(obj=message, config=config)
-    if uiic.is_new_user() and not uiic.redis_flag():
+    if uiic.is_new_user() and not await uiic.redis_flag():
         capcha_key: dict = gen_math_expression()
-        config.redis_worker.add_capcha_flag(uiic.id_user(), 0)
-        config.redis_worker.add_capcha_key(uiic.id_user(), capcha_key.get("answer"))
+        await config.redis_worker.add_capcha_flag(uiic.id_user(), 0)
+        await config.redis_worker.add_capcha_key(uiic.id_user(), capcha_key.get("answer"))
         captcha_image: InputFile = InputFile(gen_captcha(capcha_key.get("expression")))
         await message.bot.restrict_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
                                                permissions=ChatPermissions(can_send_messages=False),
@@ -92,17 +92,17 @@ async def throw_capcha(message: ChatMemberUpdated, config: Config) -> None:
         except MessageToDeleteNotFound as error:
             logger.info(f"{error} msg {uiic.id_user()}")
         try:
-            if config.redis_worker.get_capcha_flag(uiic.id_user()) == 1:
-                config.redis_worker.del_capcha_flag(uiic.id_user())
-                config.redis_worker.del_capcha_key(uiic.id_user())
+            if await config.redis_worker.get_capcha_flag(uiic.id_user()) == 1:
+                await config.redis_worker.del_capcha_flag(uiic.id_user())
+                await config.redis_worker.del_capcha_key(uiic.id_user())
                 logger.info(f"for User {uiic.id_user()} pass\n del capcha key, flag")
             else:
                 await message.bot.kick_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user(),
                                                    until_date=timedelta(seconds=config.time_delta.minute_delta))
                 await message.bot.unban_chat_member(chat_id=uiic.chat_id(), user_id=uiic.id_user())
                 logger.info(f"User {uiic.id_user()} was kicked ")
-                config.redis_worker.del_capcha_flag(uiic.id_user())
-                config.redis_worker.del_capcha_key(uiic.id_user())
+                await config.redis_worker.del_capcha_flag(uiic.id_user())
+                await config.redis_worker.del_capcha_key(uiic.id_user())
                 logger.info(f"for User {uiic.id_user()} no pass\n del capcha key, flag")
         except TypeError as err:
             logger.info(f"for User {uiic.id_user()} not have captcha flag")

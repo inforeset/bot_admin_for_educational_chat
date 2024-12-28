@@ -22,8 +22,10 @@ class ThankMessageFilter(BoundFilter):
                 f"filter letters must be a int, not {type(custom_text).__name__}"
             )
 
-    # FIXME  obj is NoneType
     async def check(self, obj: Union[types.Message, types.Sticker]):
+        if obj is None:
+            return False
+
         data = obj.text or obj.sticker.emoji if obj.sticker else obj.text
         if data:
             if any(word in data.lower() for word in self.custom_text):

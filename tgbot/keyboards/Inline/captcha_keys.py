@@ -3,20 +3,23 @@ import random
 from typing import List
 
 
-def wrong_button(temp_str: str):
+def wrong_button(temp_str: str, existing_values: set=None):
     """
-    Generate a wrong answer button that is not equal to the correct answer.
+    Generate a wrong answer button that is not equal to the correct answer
+    and is unique (not in the provided existing values).
+
     :param temp_str: str, correct answer of the captcha
-    :return: InlineKeyboardButton with a wrong answer
+    :param existing_values: set, a set of existing values to avoid duplicates
+    :return: InlineKeyboardButton with a unique wrong answer
     """
     correct_answer: int = int(temp_str)
+    if existing_values is None:
+        existing_values = set()
     while True:
-        if abs(correct_answer) <= 3:
-            correct_answer = 4
-        key = random.randint(0, (abs(correct_answer) + 1))
-        if key != correct_answer:
+        key = random.randint(0, abs(correct_answer) + 10)
+        if key != correct_answer and key not in existing_values:
             break
-
+    existing_values.add(key)
     w_b: InlineKeyboardButton = InlineKeyboardButton(
         text=f'{key}', callback_data=f"answer_button:{key}"
     )
