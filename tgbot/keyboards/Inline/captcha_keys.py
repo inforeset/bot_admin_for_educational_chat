@@ -23,7 +23,6 @@ def wrong_button(temp_str: str):
     return w_b
 
 
-
 def gen_captcha_keys(temp: int) -> List[InlineKeyboardButton]:
     """
      Take answer, generate object buttons, return list of object: "KeyboardButton"
