@@ -16,8 +16,6 @@ services:
       redis_for_bot:
         condition: service_healthy
 
-
-
   redis_for_bot:
     image: redis:latest
     container_name: ${REDIS_CONTAINER_NAME}

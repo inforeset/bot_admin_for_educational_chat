@@ -18,7 +18,6 @@ class WorkerRedis:
              r.hset('users_captcha_flag_dict', mapping={'1234': 0}) change value map ~flag
              r.hget('users_captcha_flag_dict', '1234') get value map ~flag
              r.hkeys('users_captcha_flag_dict')
-
     """
 
     def __init__(self, redis_container_name: str, redis_host_name: str, redis_port: int):

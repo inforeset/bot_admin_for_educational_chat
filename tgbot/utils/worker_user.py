@@ -7,7 +7,6 @@ from typing import List
 from tgbot.config import Config
 
 
-
 class UserIdentificationInChat:
     """
     A helper class to determine a user from a CallbackQuery or Message.
@@ -30,20 +29,26 @@ class UserIdentificationInChat:
             return int(self.obj.chat.id)
 
     def id_user(self) -> int:
+        """Dont optimise"""
         if self.is_new_user():
             if self.is_callback():
                 return int(self.obj.message.new_chat_member.id)
             else:
                 return int(self.obj.new_chat_member.user.id)
         else:
-            return int(self.obj.from_user.id)
+            if self.is_callback():
+                return int(self.obj.from_user.id)
+            else:
+                return int(self.obj.from_user.id)
+
 
     def user_name(self) -> str:
+        """Dont optimise"""
         if self.is_new_user():
             return self.obj.new_chat_member.user.full_name
         else:
             if self.is_callback():
-                return self.obj.message.from_user.full_name
+                return self.obj.from_user.full_name
             else:
                 return self.obj.from_user.full_name
 
