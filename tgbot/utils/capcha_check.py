@@ -15,12 +15,19 @@ async def check_captcha(call: CallbackQuery, config: Config):
                param call: CallbackQuery
                return None
         """
+
     uiic: UserIdentificationInChat = UserIdentificationInChat(obj=call, config=config)
     user_id = uiic.id_user()
     user_name = uiic.user_name()
     chat_id = uiic.chat_id()
+    botinfo = await call.bot.get_me(), "Имя бота"
+    logger.info(f"To check: bot info {botinfo} при проверки капчи ")
+    logger.info(f"To check: bot id != {user_id} id user при проверки капчи ")
+    logger.info(f"To check: bot name != {user_name} user mame при проверки капчи ")
+    logger.info(f"To check: колбек должно быть true {uiic.is_callback()} != {uiic.is_new_user()} это должен быть "
+                f"false при проверки капчи ")
     if await uiic.redis_check_user_id() and await uiic.is_chat_member():
-        if  int(call.data.split(':')[1]) == await config.redis_worker.get_capcha_key(user_id):
+        if int(call.data.split(':')[1]) == await config.redis_worker.get_capcha_key(user_id):
             await call.answer(text=f"{user_name}"
                                    f" you are pass!", show_alert=True)
             await call.bot.restrict_chat_member(chat_id=chat_id, user_id=user_id,
